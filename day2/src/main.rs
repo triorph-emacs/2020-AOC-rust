@@ -43,13 +43,13 @@ impl TryFrom<String> for PasswordLine {
         let mut first_splitter = line.split(": ");
         let left = first_splitter.next().unwrap();
         let password = first_splitter.next();
-        let mut left_splitter = left.split(" ");
+        let mut left_splitter = left.split(' ');
         let values = left_splitter.next().unwrap();
         let c = left_splitter.next();
-        let mut values_splitter = values.split("-");
+        let mut values_splitter = values.split('-');
         match (values_splitter.next(), values_splitter.next(), c, password) {
             (Some(a), Some(b), Some(c), Some(password))
-                if (a != "" && b != "" && c != "" && password != "") =>
+                if (!a.is_empty() && !b.is_empty() && !c.is_empty() && !password.is_empty()) =>
             {
                 Ok(PasswordLine {
                     a: a.parse::<usize>()
