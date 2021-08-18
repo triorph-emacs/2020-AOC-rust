@@ -1,5 +1,3 @@
-use num_bigint::BigUint;
-use num_bigint::ToBigUint;
 #[derive(Debug)]
 struct Bus {
     arrival: u32,
@@ -34,19 +32,17 @@ impl From<Vec<&str>> for BusSchedule {
 }
 
 impl BusSchedule {
-    fn calculate_time(&self) -> BigUint {
+    fn calculate_time(&self) -> u64 {
         // When doing a brute force search, we can go up by modulo all the values we've currently
         // found for.
-        let mut increment: BigUint = 1.to_biguint().unwrap();
-        let mut calculated_time: BigUint = 0.to_biguint().unwrap();
+        let mut increment: u64 = 1;
+        let mut calculated_time: u64 = 0;
         for bus in self.buses.iter() {
             loop {
-                if (&calculated_time % (bus.frequency))
-                    == ((bus.frequency - (bus.arrival % bus.frequency)) % bus.frequency)
-                        .to_biguint()
-                        .unwrap()
+                if (calculated_time % (bus.frequency as u64))
+                    == ((bus.frequency - (bus.arrival % bus.frequency)) % bus.frequency) as u64
                 {
-                    increment *= bus.frequency;
+                    increment *= bus.frequency as u64;
                     break;
                 }
                 calculated_time += &increment;
@@ -59,13 +55,14 @@ impl BusSchedule {
 fn main() {
     let lines: Vec<&str> = include_str!("../input_data.txt").lines().collect();
     let bus_schedule = BusSchedule::from(lines);
-    bus_schedule.calculate_time();
+    let day_b_ret = bus_schedule.calculate_time();
+    println!("We parsed this bus schedule: {:?}", bus_schedule);
+    println!("Day b, earliest time is: {}", day_b_ret);
 }
 
 #[cfg(test)]
 mod test {
     use crate::BusSchedule;
-    use num_bigint::ToBigUint;
     #[test]
     fn test_parsing() {
         let lines: Vec<&str> = vec!["939", "7,13,x,x,59,x,31,19"];
@@ -95,7 +92,7 @@ mod test {
         {
             assert_eq!(
                 BusSchedule::from(vec!["0", schedule_string]).calculate_time(),
-                expected_time.to_biguint().unwrap()
+                *expected_time
             );
         }
     }
