@@ -1,3 +1,5 @@
+use num_bigint::BigUint;
+use num_bigint::ToBigUint;
 #[derive(Debug)]
 struct Bus {
     arrival: u32,
@@ -32,26 +34,22 @@ impl From<Vec<&str>> for BusSchedule {
 }
 
 impl BusSchedule {
-    fn calculate_time(&self) -> u64 {
-        let mut increment: u64 = 1;
-        let mut calculated_time: u64 = 0;
+    fn calculate_time(&self) -> BigUint {
+        // When doing a brute force search, we can go up by modulo all the values we've currently
+        // found for.
+        let mut increment: BigUint = 1.to_biguint().unwrap();
+        let mut calculated_time: BigUint = 0.to_biguint().unwrap();
         for bus in self.buses.iter() {
-            println!("Finding time for bus {:?}", bus);
             loop {
-                println!(
-                    "Calculated time {}, bus {:?}, {}",
-                    calculated_time,
-                    bus,
-                    calculated_time % (bus.frequency as u64)
-                );
-                if (calculated_time % (bus.frequency as u64))
-                    == ((bus.frequency - bus.arrival) % bus.frequency) as u64
+                if (&calculated_time % (bus.frequency))
+                    == ((bus.frequency - (bus.arrival % bus.frequency)) % bus.frequency)
+                        .to_biguint()
+                        .unwrap()
                 {
-                    println!("Found time {}", calculated_time);
-                    increment *= bus.frequency as u64;
+                    increment *= bus.frequency;
                     break;
                 }
-                calculated_time += increment;
+                calculated_time += &increment;
             }
         }
         calculated_time
@@ -67,6 +65,7 @@ fn main() {
 #[cfg(test)]
 mod test {
     use crate::BusSchedule;
+    use num_bigint::ToBigUint;
     #[test]
     fn test_parsing() {
         let lines: Vec<&str> = vec!["939", "7,13,x,x,59,x,31,19"];
@@ -96,7 +95,7 @@ mod test {
         {
             assert_eq!(
                 BusSchedule::from(vec!["0", schedule_string]).calculate_time(),
-                *expected_time
+                expected_time.to_biguint().unwrap()
             );
         }
     }
