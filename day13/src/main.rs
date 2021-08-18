@@ -9,17 +9,14 @@ struct BusSchedule {
     start_time: u32,
     buses: Vec<Bus>,
 }
-impl From<Vec<&str>> for BusSchedule {
-    fn from(lines: Vec<&str>) -> BusSchedule {
-        let mut lines = lines.iter();
-        let start_time = lines
-            .next()
-            .unwrap()
+impl From<&[&str]> for BusSchedule {
+    fn from(lines: &[&str]) -> BusSchedule {
+        let start_time = lines[0]
             .parse::<u32>()
             .expect("First line should be an integer");
         let mut buses = Vec::<Bus>::new();
 
-        for (i, value) in lines.next().unwrap().split(',').enumerate() {
+        for (i, value) in lines[1].split(',').enumerate() {
             if value != "x" {
                 buses.push(Bus {
                     arrival: i as u32,
@@ -53,7 +50,9 @@ impl BusSchedule {
 }
 
 fn main() {
-    let lines: Vec<&str> = include_str!("../input_data.txt").lines().collect();
+    let lines = &include_str!("../input_data.txt")
+        .lines()
+        .collect::<Vec<&str>>()[0..2];
     let bus_schedule = BusSchedule::from(lines);
     let day_b_ret = bus_schedule.calculate_time();
     println!("We parsed this bus schedule: {:?}", bus_schedule);
@@ -65,7 +64,7 @@ mod test {
     use crate::BusSchedule;
     #[test]
     fn test_parsing() {
-        let lines: Vec<&str> = vec!["939", "7,13,x,x,59,x,31,19"];
+        let lines: &[&str] = &["939", "7,13,x,x,59,x,31,19"];
         let bus_schedule: BusSchedule = BusSchedule::from(lines);
         assert_eq!(bus_schedule.start_time, 939);
         assert_eq!(bus_schedule.buses.len(), 5);
@@ -91,7 +90,7 @@ mod test {
         .iter()
         {
             assert_eq!(
-                BusSchedule::from(vec!["0", schedule_string]).calculate_time(),
+                BusSchedule::from(&["0", schedule_string][..]).calculate_time(),
                 *expected_time
             );
         }
