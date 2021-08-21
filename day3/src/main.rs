@@ -8,7 +8,7 @@ struct Point {
 struct SkiMap {
     width: usize,
     height: usize,
-    positions: std::collections::HashMap<Point, bool>,
+    positions: Vec<Vec<bool>>,
 }
 
 impl std::fmt::Display for SkiMap {
@@ -32,17 +32,13 @@ impl std::fmt::Display for SkiMap {
 
 impl From<&[&[u8]]> for SkiMap {
     fn from(lines: &[&[u8]]) -> SkiMap {
-        let mut positions = std::collections::HashMap::<Point, bool>::new();
-        for (y, line) in lines.iter().enumerate() {
-            for (x, c) in line.iter().enumerate() {
-                positions.insert(
-                    Point {
-                        x: x as isize,
-                        y: y as isize,
-                    },
-                    *c == b'#',
-                );
+        let mut positions = Vec::<Vec<bool>>::new();
+        for line in lines.iter() {
+            let mut line_vec = Vec::<bool>::new();
+            for c in line.iter() {
+                line_vec.push(*c == b'#');
             }
+            positions.push(line_vec);
         }
         let width = lines[0].len();
         let height = lines.len();
@@ -64,14 +60,24 @@ impl From<&str> for SkiMap {
 
 impl SkiMap {
     fn get(&self, position: &Point) -> Option<bool> {
+        // Get the value, wrapping X positions endlessly within the range
         let width = self.width as isize;
         let mapped_point = Point {
             x: (((position.x % width) + width) % width),
             ..*position
         };
-        self.positions.get(&mapped_point).copied()
+        self.positions
+            .get(mapped_point.y as usize)
+            .and_then(|line| line.get(mapped_point.x as usize))
+            .copied()
     }
+
     fn count_vector(&self, movement: &Point) -> usize {
+        // Count how many times a repeated movement will hit trees
+        // Requires Y to be not-0 or it will loop forever
+        if movement.y == 0 {
+            panic!("Invalid movement");
+        }
         let mut position = Point { x: 0, y: 0 };
         let mut count = 0;
         loop {
@@ -87,7 +93,10 @@ impl SkiMap {
         }
         count
     }
+
     fn day_b_calculate(&self) -> usize {
+        // Calculate the Day B result. The product of how many trees are hit by doing the below
+        // movements.
         vec![
             Point { x: 1, y: 1 },
             Point { x: 3, y: 1 },
