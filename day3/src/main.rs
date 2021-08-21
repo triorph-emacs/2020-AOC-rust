@@ -32,16 +32,17 @@ impl std::fmt::Display for SkiMap {
 
 impl From<&[&[u8]]> for SkiMap {
     fn from(lines: &[&[u8]]) -> SkiMap {
-        let mut positions = Vec::<Vec<bool>>::new();
-        for line in lines.iter() {
-            let mut line_vec = Vec::<bool>::new();
-            for c in line.iter() {
-                line_vec.push(*c == b'#');
-            }
-            positions.push(line_vec);
-        }
         let width = lines[0].len();
         let height = lines.len();
+        let mut positions = vec![vec![false; width]; height];
+        for y in 0..height {
+            if lines[y].len() != width {
+                panic!("Invalid file. Not all lines are the same width");
+            }
+            for x in 0..width {
+                positions[y][x] = lines[y][x] == b'#';
+            }
+        }
         println!("Creating skimap with width {}, height {}", width, height);
         SkiMap {
             width,
@@ -95,8 +96,8 @@ impl SkiMap {
     }
 
     fn day_b_calculate(&self) -> usize {
-        // Calculate the Day B result. The product of how many trees are hit by doing the below
-        // movements.
+        // Calculate the Day B result.
+        // The product of how many trees are hit by doing the below movements.
         vec![
             Point { x: 1, y: 1 },
             Point { x: 3, y: 1 },
