@@ -26,6 +26,12 @@ Instead of error handling here I just panic! (if the input data is bad there's n
 
 Have actually added tests for the parser and using the advent of code examples.
 
+### Day 4.
+
+A little bit of error handling (but mostly panic around the input data). Lots of tests.
+
+This is where I've first delved into using enums more instead of trying Pythonic ways of doing things.
+
 ### Day 13. b.
 
 Saw a novel approach to calculating this that I just wanted to try, even though I hadn't done the in betweens.
