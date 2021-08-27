@@ -1,6 +1,4 @@
-use std::collections::HashMap;
-const VALID_NAMES: [&str; 7] = ["iyr", "ecl", "pid", "eyr", "hcl", "byr", "hgt"];
-#[derive(Debug, Hash, PartialEq, Eq)]
+#[derive(Debug, PartialEq)]
 enum PassportField {
     IssueYear(String),
     EyeColour(String),
@@ -31,23 +29,45 @@ impl PassportField {
         }
     }
     fn _validate_pid(val: &str) -> bool {
-        todo!()
+        val.parse::<u32>().is_ok() && val.len() == 9
     }
 
     fn _validate_iyr(val: &str) -> bool {
-        todo!()
+        matches!(
+                val.parse::<u32>(),
+                Ok(val_u32) if (2010..=2020).contains(&val_u32)
+        )
     }
 
     fn _validate_eyr(val: &str) -> bool {
-        todo!()
+        matches!(
+                val.parse::<u32>(),
+                Ok(val_u32) if (2020..=2030).contains(&val_u32)
+        )
     }
 
     fn _validate_ecl(val: &str) -> bool {
-        todo!()
+        ["amb", "blu", "brn", "gry", "grn", "hzl", "oth"].contains(&val)
+    }
+
+    fn _is_lowercase_hex(c: &char) -> bool {
+        ('0'..='9').contains(c) || ('a'..='f').contains(c)
     }
 
     fn _validate_hcl(val: &str) -> bool {
-        todo!()
+        if val.len() != 7 {
+            return false;
+        } else {
+            for (i, c) in val.chars().enumerate() {
+                if i == 0 && c != '#' {
+                    return false;
+                }
+                if i > 0 && !PassportField::_is_lowercase_hex(&c) {
+                    return false;
+                }
+            }
+        }
+        true
     }
 
     fn _validate_byr(val: &str) -> bool {
@@ -57,14 +77,12 @@ impl PassportField {
         )
     }
 
-    fn _validate_hgt(&self) -> bool {
-        let val = self.0;
+    fn _validate_hgt(val: &str) -> bool {
         if val.len() < 4 {
             return false;
         }
         let splitter = val.len() - 2;
         let unit = &val[splitter..];
-        println!("{} {}", &val[..splitter], unit);
         if unit == "cm" {
             return matches!(val[..splitter].parse::<u32>(),
         Ok(val_u32) if (150..=193).contains(&val_u32));
@@ -74,15 +92,15 @@ impl PassportField {
         }
         false
     }
-    fn validate_day_b(&self) -> bool {
+    fn is_valid_day_b(&self) -> bool {
         match self {
-            &PassportField::BirthYear => self._validate_byr(),
-            &PassportField::ExpiryYear => self._validate_eyr(),
-            &PassportField::EyeColour => self._validate_eyr(),
-            &PassportField::IssueYear => self._validate_iyr(),
-            &PassportField::Height => self._validate_hgt(),
-            &PassportField::HairColour => self._validate_hcl(),
-            &PassportField::PassportId => self._validate_pid(),
+            PassportField::BirthYear(val) => PassportField::_validate_byr(val),
+            PassportField::ExpiryYear(val) => PassportField::_validate_eyr(val),
+            PassportField::EyeColour(val) => PassportField::_validate_ecl(val),
+            PassportField::IssueYear(val) => PassportField::_validate_iyr(val),
+            PassportField::Height(val) => PassportField::_validate_hgt(val),
+            PassportField::HairColour(val) => PassportField::_validate_hcl(val),
+            PassportField::PassportId(val) => PassportField::_validate_pid(val),
         }
     }
 }
@@ -98,7 +116,7 @@ impl Passport {
                     .next()
                     .expect("File must contain key:val format");
 
-                if let Ok(valid_field) = PassportField::new(&key, &val) {
+                if let Ok(valid_field) = PassportField::new(key, val) {
                     keys.push(valid_field);
                 }
             }
@@ -106,36 +124,26 @@ impl Passport {
         Passport { keys }
     }
 
-    fn valid_day_a(&self) -> bool {
-        for key in VALID_NAMES {
-            if !self.keys.contains_key(key) {
-                return false;
-            }
-        }
-        true
+    fn is_valid_day_a(&self) -> bool {
+        self.keys.len() == 7
     }
 
-    fn valid_day_b(&self) -> bool {
-        for key in VALID_NAMES {
-            if !self.keys.contains_key(key) || !validate_day_b_entry(key, &self.keys[key]) {
-                return false;
-            }
-        }
-        true
+    fn is_valid_day_b(&self) -> bool {
+        self.is_valid_day_a() && self.keys.iter().all(|key| key.is_valid_day_b())
     }
 }
 
 fn count_valid_day_a(passports: &[Passport]) -> usize {
     passports
         .iter()
-        .filter(|passport| passport.valid_day_a())
+        .filter(|passport| passport.is_valid_day_a())
         .count()
 }
 
 fn count_valid_day_b(passports: &[Passport]) -> usize {
     passports
         .iter()
-        .filter(|passport| passport.valid_day_b())
+        .filter(|passport| passport.is_valid_day_b())
         .count()
 }
 
@@ -161,24 +169,26 @@ mod test {
     use crate::count_valid_day_a;
     use crate::count_valid_day_b;
     use crate::parse_data;
-    use crate::validate_day_b_entry;
+    use crate::PassportField;
 
     #[test]
     fn test_parse() {
         let data = include_str!("../test_data.txt");
         let ret = parse_data(data);
         assert_eq!(ret.len(), 4);
-        for (key, val) in [
+        for (i, (key, val)) in [
             ("ecl", "gry"),
             ("pid", "860033327"),
             ("eyr", "2020"),
             ("hcl", "#fffffd"),
             ("byr", "1937"),
             ("iyr", "2017"),
-            ("cid", "147"),
             ("hgt", "183cm"),
-        ] {
-            assert_eq!(ret[0].keys.get(key), Some(&String::from(val)));
+        ]
+        .iter()
+        .enumerate()
+        {
+            assert_eq!(ret[0].keys[i], PassportField::new(key, val).unwrap());
         }
     }
 
@@ -213,8 +223,9 @@ mod test {
             ("ecl", "brn"),
             ("pid", "000000001"),
         ] {
+            let ret = PassportField::new(key, val).unwrap();
             assert!(
-                validate_day_b_entry(key, val),
+                ret.is_valid_day_b(),
                 "Expected a pass for {} and {}",
                 key,
                 val
@@ -233,8 +244,9 @@ mod test {
             ("ecl", "wat"),
             ("pid", "0123456789"),
         ] {
+            let ret = PassportField::new(key, val).unwrap();
             assert!(
-                !validate_day_b_entry(key, val),
+                !ret.is_valid_day_b(),
                 "Expected a fail for {} and {}",
                 key,
                 val
