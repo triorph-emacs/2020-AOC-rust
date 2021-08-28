@@ -32,6 +32,12 @@ A little bit of error handling (but mostly panic around the input data). Lots of
 
 This is where I've first delved into using enums more instead of trying Pythonic ways of doing things.
 
+### Day 5.
+
+A bit of an easy one this time. Just have to convert some chars to binary values and find a missing number
+in the middle. Nothing particularly novel to learn here. Still has tests for the individual parsing. Was
+a good chance to practice using vim-sneak and quickscope which I just installed.
+
 ### Day 13. b.
 
 Saw a novel approach to calculating this that I just wanted to try, even though I hadn't done the in betweens.
