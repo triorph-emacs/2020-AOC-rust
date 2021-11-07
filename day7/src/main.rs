@@ -20,6 +20,11 @@ fn find_parents_for_colour<'a>(bags: &'a [Bag], bag_to_calculate: &str) -> Vec<&
     }
     ret
 }
+
+// Calculate how many different bag types can eventually point to the given
+// bag to calculate. e.g. if a red bag holds a shiny gold bag, and a blue bag
+// holds a red bag, then both red bag and blue bag eventually point to a
+// shing gold bag, so the answer for shiny gold bag is 2.
 fn calculate_day_a(bags: &[Bag], bag_to_calculate: &str) -> usize {
     let mut count = 0;
     let mut bags_found: Vec<&str> = vec![bag_to_calculate];
@@ -36,6 +41,39 @@ fn calculate_day_a(bags: &[Bag], bag_to_calculate: &str) -> usize {
     }
 
     count - 1 // don't include the starting bag
+}
+
+struct BagWithCachedResult<'a> {
+    bag: &'a Bag,
+    result: Option<usize>,
+}
+
+fn get_count_for_bag_colour(
+    ret_dict: &mut std::collections::HashMap<&str, BagWithCachedResult>,
+    bag_to_find: &str,
+) -> usize {
+    match (ret_dict[bag_to_find].result, ret_dict[bag_to_find].bag) {
+        (Some(ret), _) => ret,
+        (None, bag) => {
+            let mut count = 1;
+            for bag_container in bag.contains.iter() {
+                count += bag_container.quantity
+                    * get_count_for_bag_colour(ret_dict, &bag_container.colour[..]);
+            }
+            ret_dict.get_mut(bag_to_find).unwrap().result = Some(count);
+            count
+        }
+    }
+}
+// Calculate how many bags total a given bag can hold.
+// If bag green holds 5 red, and bag red holds 2 blue, then 5 red bags has 10 blue
+// bags, as well as the 5 red bags, so 1 green bag has 15 bags
+fn calculate_day_b(bags: &[Bag], bag_to_calculate: &str) -> usize {
+    let mut ret_dict = std::collections::HashMap::<&str, BagWithCachedResult>::new();
+    for bag in bags.iter() {
+        ret_dict.insert(&bag.colour[..], BagWithCachedResult { bag, result: None });
+    }
+    get_count_for_bag_colour(&mut ret_dict, bag_to_calculate) - 1 // don't include the given bag in the result
 }
 
 // Parse the each input line into a Bag object.
@@ -83,12 +121,14 @@ fn main() {
         .map(Result::unwrap)
         .collect();
     println!("Day a result: {}", calculate_day_a(&bags, "shiny gold"));
+    println!("Day b result: {}", calculate_day_b(&bags, "shiny gold"));
 }
 
 #[cfg(test)]
 mod test {
     use crate::bag_parser;
     use crate::calculate_day_a;
+    use crate::calculate_day_b;
     use crate::Bag;
     #[test]
     fn test_parse_bag() {
@@ -141,5 +181,16 @@ mod test {
             .map(Result::unwrap)
             .collect();
         assert_eq!(calculate_day_a(&bags, "shiny gold"), 4);
+    }
+
+    #[test]
+    fn test_day_b_problem() {
+        let lines: &str = include_str!("../test_data_b.txt");
+        let bags: Vec<Bag> = lines
+            .lines()
+            .map(bag_parser::parse)
+            .map(Result::unwrap)
+            .collect();
+        assert_eq!(calculate_day_b(&bags, "shiny gold"), 126)
     }
 }
