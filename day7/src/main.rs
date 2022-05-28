@@ -21,10 +21,10 @@ fn find_parents_for_colour<'a>(bags: &'a [Bag], bag_to_calculate: &str) -> Vec<&
     ret
 }
 
-// Calculate how many different bag types can eventually point to the given
-// bag to calculate. e.g. if a red bag holds a shiny gold bag, and a blue bag
-// holds a red bag, then both red bag and blue bag eventually point to a
-// shing gold bag, so the answer for shiny gold bag is 2.
+/// Calculate how many different bag types can eventually point to the given
+/// bag to calculate. e.g. if a red bag holds a shiny gold bag, and a blue bag
+/// holds a red bag, then both red bag and blue bag eventually point to a
+/// shing gold bag, so the answer for shiny gold bag is 2.
 fn calculate_day_a(bags: &[Bag], bag_to_calculate: &str) -> usize {
     let mut count = 0;
     let mut bags_found: Vec<&str> = vec![bag_to_calculate];

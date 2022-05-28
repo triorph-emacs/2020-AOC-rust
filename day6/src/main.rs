@@ -76,9 +76,8 @@ fn main() {
 
 #[cfg(test)]
 mod test {
-    use crate::calculate_day_a_answer;
-    use crate::calculate_day_b_answer;
-    use crate::parse_input_into_groups;
+    use super::*;
+
     #[test]
     fn test_parse_groups() {
         let test_data = include_str!("../test_data.txt");
